@@ -1,0 +1,40 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.vcxproj.user
+*.vcxproj.filters
+
+# VS Code
+.vscode/
+
+# CMake
+build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+compile_commands.json
+
+# Компиляция
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+
+# Временные файлы
+*.tmp
+*.swp
+*.bak
+*~
+
+# Логи
+*.log
+
+# Тесты
+test/
+tests/
