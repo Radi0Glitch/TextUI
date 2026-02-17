@@ -72,14 +72,14 @@ struct ColorStyle
 	
 	ColorStyle() :
 		foreground(Color::DEFAULT),
-		background(Color::DEFAULT),
+		background(BackgroundColor::DEFAULT),
 		bold(false),
 		italic(false),
 		underline(false) {}
-		
+
 	ColorStyle(Color fg) :
 		foreground(fg),
-		background(Color::DEFAULT),
+		background(BackgroundColor::DEFAULT),
 		bold(false),
 		italic(false),
 		underline(false) {}

@@ -1,5 +1,6 @@
 #include "Mouse.h"
 #include "../platform/Platform.h"
+#include <cmath>
 
 MousePosition Mouse::currentPosition = {0, 0, false, false, false};
 std::function<void(int, int, MouseButton)> Mouse::onClickHandler = nullptr;

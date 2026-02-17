@@ -10,7 +10,7 @@
  * - Список
  */
 
-#include "core/SimpleAPI.h"
+#include "SimpleAPI.h"
 
 using namespace ui;
 

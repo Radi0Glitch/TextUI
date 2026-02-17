@@ -5,14 +5,6 @@ project(TextUI VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Позиционные аргументы в cmake
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /utf-8")
-    add_definitions(-DWINDOWS_PLATFORM)
-else()
-    add_definitions(-DUNIX_PLATFORM)
-endif()
-
 # Исходные файлы ядра
 set(CORE_SOURCES
     core/RenderBuffer.cpp
@@ -23,11 +15,13 @@ set(CORE_SOURCES
 )
 
 # Исходные файлы платформы
-if(WIN32)
+if(WIN32 OR CMAKE_HOST_WIN32)
+    add_definitions(-DWINDOWS_PLATFORM)
     set(PLATFORM_SOURCES
         platform/WindowsPlatform.cpp
     )
 else()
+    add_definitions(-DUNIX_PLATFORM)
     set(PLATFORM_SOURCES
         platform/UnixPlatform.cpp
     )

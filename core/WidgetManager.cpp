@@ -1,5 +1,5 @@
 
-#include "../widgets/WidgetManager.h"
+#include "../core/WidgetManager.h"
 #include "../core/RenderBuffer.h"
 #include <algorithm>
 

@@ -13,6 +13,22 @@
 #include <mutex>
 #include <condition_variable>
 
+// Базовый класс для диалогов
+class Dialog : public Window {
+protected:
+    std::function<void()> onAccept;
+    std::function<void()> onCancel;
+
+public:
+    Dialog(int x, int y, int width, int height, const std::string& title);
+
+    void setOnAccept(const std::function<void()>& callback) { onAccept = callback; }
+    void setOnCancel(const std::function<void()>& callback) { onCancel = callback; }
+
+    void accept();
+    void cancel();
+};
+
 // Базовый класс для модальных диалогов с поддержкой синхронизации
 class ModalDialog : public Dialog {
 protected:
@@ -23,30 +39,15 @@ protected:
 
 public:
     ModalDialog(int x, int y, int width, int height, const std::string& title);
-    
+
     // Блокирующая функция ожидания результата
     virtual void waitForResult();
-    
+
     // Функция для завершения диалога с результатом
     void completeWithResult();
-    
+
     // Проверка, завершен ли диалог
-    bool isCompleted() const { return completed; }
-};
-
-class Dialog : public Window {
-protected:
-    std::function<void()> onAccept;
-    std::function<void()> onCancel;
-
-public:
-    Dialog(int x, int y, int width, int height, const std::string& title);
-    
-    void setOnAccept(const std::function<void()>& callback) { onAccept = callback; }
-    void setOnCancel(const std::function<void()>& callback) { onCancel = callback; }
-    
-    void accept();
-    void cancel();
+    bool isCompleted() const { return completed.load(); }
 };
 
 class MessageBox : public ModalDialog {
@@ -61,10 +62,10 @@ public:
     void setOnOk(const std::function<void()>& callback) { onOk = callback; }
 
     void render() override;
-    void accept();
+    bool handleInput(char key) override;
 };
 
-class ConfirmDialog : public Dialog {
+class ConfirmDialog : public ModalDialog {
 private:
     std::string message;
     std::function<void(bool)> onResult;
@@ -79,12 +80,11 @@ public:
 
     void render() override;
     bool handleInput(char key) override;
-    
-    void setAndComplete(bool result);
+
     bool getResult() const { return dialogResult; }
 };
 
-class InputDialog : public Dialog {
+class InputDialog : public ModalDialog {
 private:
     std::string message;
     TextBox* textBox;
@@ -101,15 +101,14 @@ public:
     void render() override;
     bool handleInput(char key) override;
     const std::string& getInputValue() const;
-    
-    void setAndComplete(const std::string& result);
+
     const std::string& getResult() const { return dialogResult; }
 };
 
-// Функции для показа модальных диалогов (для внутреннего использования)
+// Функции для показа модальных диалогов
 void showMessageDialog(Window* parent, const std::string& title, const std::string& message);
 bool showConfirmDialog(Window* parent, const std::string& title, const std::string& message);
-std::string showInputDialog(Window* parent, const std::string& title, const std::string& message, 
+std::string showInputDialog(Window* parent, const std::string& title, const std::string& message,
                            const std::string& defaultValue = "");
 
-#endif
+#endif // DIALOG_H

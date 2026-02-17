@@ -13,128 +13,122 @@ private:
     bool isHovered;
 
 public:
-    Button(int x, int y, int width, const std::string& text) 
+    Button(int x, int y, int width, const std::string& text)
         : Widget(x, y, width, 3), onClick(nullptr), isPressed(false), hasFocus(false), isHovered(false) {
         this->text = text;
         if (static_cast<int>(text.length()) > width - 2) {
-            this->width = text.length() + 2;
+            this->width = static_cast<int>(text.length()) + 2;
         }
     }
-    
+
     void setOnClick(const std::function<void()>& callback) {
         onClick = callback;
     }
-    
+
     void setFocus(bool focus) { hasFocus = focus; }
-    bool hasFocus() const { return hasFocus; }
-    
+    bool isFocused() const { return hasFocus; }
+
     void render() override {
         if (!visible) return;
-        
+
         ColorStyle buttonStyle = colorStyle;
         if (hasFocus || isHovered) {
             buttonStyle = ColorStyle(Color::BLACK, BackgroundColor::WHITE).setBold();
         } else if (isPressed) {
             buttonStyle = ColorStyle(Color::WHITE, BackgroundColor::BLUE);
         }
-        
+
         // Рисуем рамку кнопки
         Renderer::drawRectangle(x, y, width, height, boxStyle, buttonStyle);
-        
+
         // Рисуем текст по центру
-        int textX = x + (width - text.length()) / 2;
+        int textX = x + (width - static_cast<int>(text.length())) / 2;
         int textY = y + height / 2;
         Renderer::drawText(textX, textY, text, buttonStyle);
     }
-    
+
     void renderToBuffer(RenderBuffer& buffer) override {
-        if (!visible || !needs_redraw) return;
-        
+        if (!visible || !needsRedraw) return;
+
         ColorStyle buttonStyle = colorStyle;
         if (hasFocus || isHovered) {
             buttonStyle = ColorStyle(Color::BLACK, BackgroundColor::WHITE).setBold();
         } else if (isPressed) {
             buttonStyle = ColorStyle(Color::WHITE, BackgroundColor::BLUE);
         }
-        
+
         // Рисуем рамку кнопки в буфер
-        // Верхняя линия
+        // Верхняя и нижняя линии
         for (int i = x + 1; i < x + width - 1; i++) {
-            buffer.setStyledChar(i, y, boxStyle.horizontal,
+            buffer.setStyledChar(i, y, boxStyle.horizontal[0],
+                static_cast<int>(buttonStyle.foreground),
+                static_cast<int>(buttonStyle.background),
+                buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
+            buffer.setStyledChar(i, y + height - 1, boxStyle.horizontal[0],
                 static_cast<int>(buttonStyle.foreground),
                 static_cast<int>(buttonStyle.background),
                 buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
         }
-        
-        // Нижняя линия
-        for (int i = x + 1; i < x + width - 1; i++) {
-            buffer.setStyledChar(i, y + height - 1, boxStyle.horizontal,
-                static_cast<int>(buttonStyle.foreground),
-                static_cast<int>(buttonStyle.background),
-                buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        }
-        
+
         // Левые и правые линии
         for (int i = y + 1; i < y + height - 1; i++) {
-            buffer.setStyledChar(x, i, boxStyle.vertical,
+            buffer.setStyledChar(x, i, boxStyle.vertical[0],
                 static_cast<int>(buttonStyle.foreground),
                 static_cast<int>(buttonStyle.background),
                 buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-            buffer.setStyledChar(x + width - 1, i, boxStyle.vertical,
+            buffer.setStyledChar(x + width - 1, i, boxStyle.vertical[0],
                 static_cast<int>(buttonStyle.foreground),
                 static_cast<int>(buttonStyle.background),
                 buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
         }
-        
+
         // Углы
-        buffer.setStyledChar(x, y, boxStyle.top_left,
+        buffer.setStyledChar(x, y, boxStyle.top_left[0],
             static_cast<int>(buttonStyle.foreground),
             static_cast<int>(buttonStyle.background),
             buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        buffer.setStyledChar(x + width - 1, y, boxStyle.top_right,
+        buffer.setStyledChar(x + width - 1, y, boxStyle.top_right[0],
             static_cast<int>(buttonStyle.foreground),
             static_cast<int>(buttonStyle.background),
             buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        buffer.setStyledChar(x, y + height - 1, boxStyle.bottom_left,
+        buffer.setStyledChar(x, y + height - 1, boxStyle.bottom_left[0],
             static_cast<int>(buttonStyle.foreground),
             static_cast<int>(buttonStyle.background),
             buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        buffer.setStyledChar(x + width - 1, y + height - 1, boxStyle.bottom_right,
+        buffer.setStyledChar(x + width - 1, y + height - 1, boxStyle.bottom_right[0],
             static_cast<int>(buttonStyle.foreground),
             static_cast<int>(buttonStyle.background),
             buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        
+
         // Рисуем текст по центру
-        int textX = x + (width - text.length()) / 2;
+        int textX = x + (width - static_cast<int>(text.length())) / 2;
         int textY = y + height / 2;
-        for (size_t i = 0; i < text.length() && textX + i < buffer.getWidth(); i++) {
-            buffer.setStyledChar(textX + i, textY, text[i],
+        for (size_t i = 0; i < text.length() && textX + static_cast<int>(i) < buffer.getWidth(); i++) {
+            buffer.setStyledChar(textX + static_cast<int>(i), textY, text[i],
                 static_cast<int>(buttonStyle.foreground),
                 static_cast<int>(buttonStyle.background),
                 buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
         }
-        
+
         markClean();
     }
-    
+
     bool handleInput(char key) override {
         if (!visible || !hasFocus) return false;
-        
+
         switch (key) {
             case ' ':
             case '\n':
             case '\r':
                 triggerClick();
                 return true;
-            case '\t': // Tab - передаем фокус дальше
-                return false;
         }
         return false;
     }
-    
+
     bool handleMouse(int mouseX, int mouseY, MouseButton button, bool isPress) override {
         if (!visible) return false;
-        
+
         if (isPointInside(mouseX, mouseY)) {
             if (button == MouseButton::LEFT) {
                 if (isPress) {
@@ -148,18 +142,18 @@ public:
                 }
                 return true;
             }
-            return true; // Мышь над кнопкой
+            return true;
         } else {
             isPressed = false;
             isHovered = false;
         }
-        
+
         return false;
     }
-    
+
     bool handleMouseMove(int mouseX, int mouseY) override {
         if (!visible) return false;
-        
+
         if (isPointInside(mouseX, mouseY)) {
             isHovered = true;
             return true;
@@ -167,10 +161,10 @@ public:
             isHovered = false;
             isPressed = false;
         }
-        
+
         return false;
     }
-    
+
 private:
     void triggerClick() {
         isPressed = false;
@@ -180,4 +174,4 @@ private:
     }
 };
 
-#endif
+#endif // BUTTON_H

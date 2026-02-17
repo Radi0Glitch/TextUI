@@ -1,181 +1,145 @@
 #ifndef TEXTBOX_H
 #define TEXTBOX_H
 
-#include "../widgets/Widget.h"
+#include "Widget.h"
 #include "../core/Renderer.h"
-#include <string>
+#include "../platform/Platform.h"
+#include <iostream>
 
 class TextBox : public Widget {
 private:
-    std::string content;
-    size_t cursorPos;
     bool hasFocus;
-    char placeholderChar;
+    size_t cursorPos;
 
 public:
-    TextBox(int x, int y, int width) 
-        : Widget(x, y, width, 3), cursorPos(0), hasFocus(false), placeholderChar('_') {}
-    
-    void setFocus(bool focus) { hasFocus = focus; markDirty(); }
-    bool hasFocus() const { return hasFocus; }
-    void setContent(const std::string& newContent) { content = newContent; cursorPos = content.length(); markDirty(); }
-    const std::string& getContent() const { return content; }
-    
+    TextBox(int x, int y, int width, const std::string& content = "")
+        : Widget(x, y, width, 3), hasFocus(false), cursorPos(0) {
+        text = content;
+    }
+
+    void setFocus(bool focus) { hasFocus = focus; }
+    bool isFocused() const { return hasFocus; }
+
+    void setContent(const std::string& newContent) {
+        text = newContent;
+        cursorPos = text.length();
+        markDirty();
+    }
+
+    const std::string& getContent() const { return text; }
+
     void render() override {
         if (!visible) return;
-        
-        ColorStyle textBoxStyle = colorStyle;
-        if (hasFocus) {
-            textBoxStyle = ColorStyle(Color::BLACK, BackgroundColor::WHITE);
-        }
-        
-        // Рисуем рамку
-        Renderer::drawRectangle(x, y, width, height, boxStyle, textBoxStyle);
-        
-        // Рисуем содержимое
-        std::string displayText = content;
-        if (displayText.length() >= static_cast<size_t>(width - 2)) {
-            displayText = displayText.substr(0, width - 2);
-        }
-        
-        // Добавляем placeholder символы если строка короче
-        while (displayText.length() < static_cast<size_t>(width - 2)) {
-            displayText += placeholderChar;
-        }
-        
-        Renderer::drawText(x + 1, y + 1, displayText, textBoxStyle);
-        
-        // Рисуем курсор если есть фокус
-        if (hasFocus) {
-            size_t cursorDisplayPos = (cursorPos < static_cast<size_t>(width - 2)) ? cursorPos : width - 3;
-            Renderer::drawChar(x + 1 + cursorDisplayPos, y + 1, '|', 
-                             ColorStyle(Color::RED).setBold());
+
+        ColorStyle boxStyle = hasFocus
+            ? ColorStyle(Color::BLACK, BackgroundColor::WHITE)
+            : colorStyle;
+
+        Renderer::drawRectangle(x, y, width, height, this->boxStyle, boxStyle);
+        Renderer::drawText(x + 1, y + 1, text, boxStyle);
+
+        // Рисуем курсор если фокус
+        if (hasFocus && cursorPos <= text.length()) {
+            Platform::moveCursor(x + 1 + static_cast<int>(cursorPos), y + 1);
+            std::cout << "_";
         }
     }
-    
+
     void renderToBuffer(RenderBuffer& buffer) override {
-        if (!visible || !needs_redraw) return;
-        
-        ColorStyle textBoxStyle = colorStyle;
-        if (hasFocus) {
-            textBoxStyle = ColorStyle(Color::BLACK, BackgroundColor::WHITE);
-        }
-        
-        // Рисуем рамку в буфер
-        // Горизонтальные линии
+        if (!visible || !needsRedraw) return;
+
+        ColorStyle boxStyle = hasFocus
+            ? ColorStyle(Color::BLACK, BackgroundColor::WHITE)
+            : this->colorStyle;
+
+        // Рисуем рамку
         for (int i = x + 1; i < x + width - 1; i++) {
-            buffer.setStyledChar(i, y, boxStyle.horizontal,
-                static_cast<int>(textBoxStyle.foreground),
-                static_cast<int>(textBoxStyle.background),
-                textBoxStyle.bold, textBoxStyle.italic, textBoxStyle.underline);
-            buffer.setStyledChar(i, y + height - 1, boxStyle.horizontal,
-                static_cast<int>(textBoxStyle.foreground),
-                static_cast<int>(textBoxStyle.background),
-                textBoxStyle.bold, textBoxStyle.italic, textBoxStyle.underline);
+            buffer.setStyledChar(i, y, this->boxStyle.horizontal[0],
+                static_cast<int>(boxStyle.foreground),
+                static_cast<int>(boxStyle.background),
+                boxStyle.bold, boxStyle.italic, boxStyle.underline);
+            buffer.setStyledChar(i, y + height - 1, this->boxStyle.horizontal[0],
+                static_cast<int>(boxStyle.foreground),
+                static_cast<int>(boxStyle.background),
+                boxStyle.bold, boxStyle.italic, boxStyle.underline);
         }
-        
-        // Вертикальные линии
         for (int i = y + 1; i < y + height - 1; i++) {
-            buffer.setStyledChar(x, i, boxStyle.vertical,
-                static_cast<int>(textBoxStyle.foreground),
-                static_cast<int>(textBoxStyle.background),
-                textBoxStyle.bold, textBoxStyle.italic, textBoxStyle.underline);
-            buffer.setStyledChar(x + width - 1, i, boxStyle.vertical,
-                static_cast<int>(textBoxStyle.foreground),
-                static_cast<int>(textBoxStyle.background),
-                textBoxStyle.bold, textBoxStyle.italic, textBoxStyle.underline);
+            buffer.setStyledChar(x, i, this->boxStyle.vertical[0],
+                static_cast<int>(boxStyle.foreground),
+                static_cast<int>(boxStyle.background),
+                boxStyle.bold, boxStyle.italic, boxStyle.underline);
+            buffer.setStyledChar(x + width - 1, i, this->boxStyle.vertical[0],
+                static_cast<int>(boxStyle.foreground),
+                static_cast<int>(boxStyle.background),
+                boxStyle.bold, boxStyle.italic, boxStyle.underline);
         }
-        
         // Углы
-        buffer.setStyledChar(x, y, boxStyle.top_left,
-            static_cast<int>(textBoxStyle.foreground),
-            static_cast<int>(textBoxStyle.background),
-            textBoxStyle.bold, textBoxStyle.italic, textBoxStyle.underline);
-        buffer.setStyledChar(x + width - 1, y, boxStyle.top_right,
-            static_cast<int>(textBoxStyle.foreground),
-            static_cast<int>(textBoxStyle.background),
-            textBoxStyle.bold, textBoxStyle.italic, textBoxStyle.underline);
-        buffer.setStyledChar(x, y + height - 1, boxStyle.bottom_left,
-            static_cast<int>(textBoxStyle.foreground),
-            static_cast<int>(textBoxStyle.background),
-            textBoxStyle.bold, textBoxStyle.italic, textBoxStyle.underline);
-        buffer.setStyledChar(x + width - 1, y + height - 1, boxStyle.bottom_right,
-            static_cast<int>(textBoxStyle.foreground),
-            static_cast<int>(textBoxStyle.background),
-            textBoxStyle.bold, textBoxStyle.italic, textBoxStyle.underline);
-        
-        // Рисуем содержимое
-        std::string displayText = content;
-        if (displayText.length() >= static_cast<size_t>(width - 2)) {
-            displayText = displayText.substr(0, width - 2);
+        buffer.setStyledChar(x, y, this->boxStyle.top_left[0],
+            static_cast<int>(boxStyle.foreground),
+            static_cast<int>(boxStyle.background),
+            boxStyle.bold, boxStyle.italic, boxStyle.underline);
+        buffer.setStyledChar(x + width - 1, y, this->boxStyle.top_right[0],
+            static_cast<int>(boxStyle.foreground),
+            static_cast<int>(boxStyle.background),
+            boxStyle.bold, boxStyle.italic, boxStyle.underline);
+        buffer.setStyledChar(x, y + height - 1, this->boxStyle.bottom_left[0],
+            static_cast<int>(boxStyle.foreground),
+            static_cast<int>(boxStyle.background),
+            boxStyle.bold, boxStyle.italic, boxStyle.underline);
+        buffer.setStyledChar(x + width - 1, y + height - 1, this->boxStyle.bottom_right[0],
+            static_cast<int>(boxStyle.foreground),
+            static_cast<int>(boxStyle.background),
+            boxStyle.bold, boxStyle.italic, boxStyle.underline);
+
+        // Рисуем текст
+        for (size_t i = 0; i < text.length() && x + 1 + static_cast<int>(i) < x + width - 1; i++) {
+            buffer.setStyledChar(x + 1 + static_cast<int>(i), y + 1, text[i],
+                static_cast<int>(boxStyle.foreground),
+                static_cast<int>(boxStyle.background),
+                boxStyle.bold, boxStyle.italic, boxStyle.underline);
         }
-        
-        // Добавляем placeholder символы если строка короче
-        while (displayText.length() < static_cast<size_t>(width - 2)) {
-            displayText += placeholderChar;
-        }
-        
-        for (size_t i = 0; i < displayText.length() && x + 1 + i < buffer.getWidth(); i++) {
-            if (y + 1 >= 0 && y + 1 < buffer.getHeight()) {
-                buffer.setStyledChar(x + 1 + i, y + 1, displayText[i],
-                    static_cast<int>(textBoxStyle.foreground),
-                    static_cast<int>(textBoxStyle.background),
-                    textBoxStyle.bold, textBoxStyle.italic, textBoxStyle.underline);
-            }
-        }
-        
-        // Рисуем курсор если есть фокус
-        if (hasFocus) {
-            size_t cursorDisplayPos = (cursorPos < static_cast<size_t>(width - 2)) ? cursorPos : width - 3;
-            if (x + 1 + cursorDisplayPos < buffer.getWidth() && y + 1 >= 0 && y + 1 < buffer.getHeight()) {
-                buffer.setStyledChar(x + 1 + cursorDisplayPos, y + 1, '|',
-                    static_cast<int>(Color::RED),
-                    static_cast<int>(textBoxStyle.background),
-                    true, false, false); // bold
-            }
-        }
-        
+
         markClean();
     }
-    
+
     bool handleInput(char key) override {
         if (!visible || !hasFocus) return false;
-        
+
         if (key == '\b' || key == 127) { // Backspace
-            if (cursorPos > 0 && !content.empty()) {
-                content.erase(cursorPos - 1, 1);
+            if (cursorPos > 0) {
+                text.erase(cursorPos - 1, 1);
                 cursorPos--;
                 markDirty();
             }
             return true;
-        }
-        else if (key == '\t') { // Tab - передаем фокус дальше
-            return false;
-        }
-        else if (key >= 32 && key <= 126) { // Печатаемые символы
-            content.insert(cursorPos, 1, key);
+        } else if (key == 27) { // Escape
+            hasFocus = false;
+            return true;
+        } else if (key >= 32 && key < 127) { // Printable characters
+            text.insert(cursorPos, 1, key);
             cursorPos++;
             markDirty();
             return true;
         }
-        
         return false;
     }
-    
-    bool handleMouse(int mouseX, int mouseY, MouseButton button, bool isPress) override {
+
+    bool handleMouse(int mouseX, int mouseY, MouseButton /*button*/, bool isPress) override {
         if (!visible) return false;
-        
-        if (isPointInside(mouseX, mouseY) && button == MouseButton::LEFT && isPress) {
-            hasFocus = true;
-            markDirty();
+
+        if (isPointInside(mouseX, mouseY)) {
+            if (isPress) {
+                hasFocus = true;
+                // Простая установка курсора
+                cursorPos = static_cast<size_t>(mouseX - x - 1);
+                if (cursorPos > text.length()) cursorPos = text.length();
+            }
             return true;
-        } else if (button == MouseButton::LEFT && isPress) {
+        } else {
             hasFocus = false;
-            markDirty();
         }
-        
-        return isPointInside(mouseX, mouseY);
+        return false;
     }
 };
 
-#endif
+#endif // TEXTBOX_H
