@@ -1,0 +1,21 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# TextUI CMake конфигурация
+# Использование:
+#   find_package(TextUI REQUIRED)
+#   target_link_libraries(your_target PRIVATE textui::textui)
+
+if(NOT TARGET textui::textui)
+    include("${CMAKE_CURRENT_LIST_DIR}/TextUITargets.cmake")
+endif()
+
+# Проверка типа библиотеки
+if(TARGET textui_shared)
+    set(TEXTUI_SHARED_LIB TRUE)
+elseif(TARGET textui_static)
+    set(TEXTUI_STATIC_LIB TRUE)
+endif()
+
+check_required_components(TextUI)
