@@ -70,7 +70,21 @@ int main() {
 }
 ```
 
-## Примеры использования виджетов
+## Сборка
+
+```bash
+cd build
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build .
+cmake --install . --prefix ../install
+```
+
+## Использование в проекте
+
+```cmake
+find_package(TextUI REQUIRED)
+target_link_libraries(your_target PRIVATE textui)
+```
 
 ### RadioButton с группой
 ```cpp
@@ -94,12 +108,10 @@ group->setOnChange([](int index) {
 auto* tabs = app.addTabControl(window, 1, 4, 68, 17);
 tabs->setHotkey('T');
 
-// Страница 1
 ui::TabPage* page1 = tabs->addTab("Main");
 page1->setHotkey('M');
 page1->addWidget<ui::Label>(2, 1, "Main Page");
 
-// Страница 2
 ui::TabPage* page2 = tabs->addTab("Advanced");
 page2->setHotkey('A');
 page2->addWidget<ui::Label>(2, 1, "Advanced Page");
@@ -112,9 +124,6 @@ drop->setHotkey('C');
 drop->addItem("Auto");
 drop->addItem("Enabled");
 drop->addItem("Disabled");
-drop->setOnSelect([](int index) {
-    std::cout << "Selected: " << index << std::endl;
-});
 ```
 
 ### TextBox с маской и паролем
@@ -131,19 +140,13 @@ num->setIntValue(42);
 // Маска (AAA-000)
 auto* masked = app.addTextBox(window, 2, 7, 10);
 masked->setMask("AAA-000");
-
-// История ввода
-auto* history = app.addTextBox(window, 2, 9, 30);
-history->enableHistory(10);
 ```
 
 ### MessageBox
 ```cpp
-// Информация
 app.MessageBox("Info", "Operation completed",
                ui::MessageBoxIcon::Info);
 
-// Подтверждение
 auto result = app.MessageBox("Confirm", "Delete file?",
                              ui::MessageBoxIcon::Question,
                              ui::MessageBoxButtons::YesNo);
@@ -196,35 +199,6 @@ app.setTheme("matrix");
 - `Black`, `Blue`, `Green`, `Cyan`, `Red`, `Magenta`, `Brown`, `White`
 - `Gray`, `BrightBlue`, `BrightGreen`, `BrightCyan`, `BrightRed`, `BrightMagenta`, `BrightYellow`, `BrightWhite`
 
-## Сборка
-
-### Windows (MinGW/MSYS2)
-```bash
-cd build
-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build .
-```
-
-### Windows (MSVC)
-```bash
-cd build
-cmake .. -G "Visual Studio 17 2022"
-cmake --build . --config Release
-```
-
-### Linux
-```bash
-cd build
-cmake ..
-make
-```
-
-## Требования
-
-- **Windows 10+** с поддержкой ANSI
-- **Linux** с любым терминалом
-- **Компилятор**: C++17 (GCC 7+, Clang 5+, MSVC 2017+)
-
 ## Архитектура
 
 ```
@@ -235,25 +209,23 @@ TextUI/
 │   └── Input.h         # Ввод с модификаторами
 ├── graphics/
 │   ├── Colors.h        # 16-цветная палитра BIOS
-│   ├── Chars.h         # ASCII и псевдографика
+│   ├── Chars.h         # ASCII символы (Code Page 437)
 │   └── Theme.h         # Система тем
-├── widgets/
-│   ├── Widget.h        # Базовый класс
-│   ├── Window.h        # Окна
-│   ├── Button.h        # Кнопки
-│   ├── Label.h         # Метки
-│   ├── TextBox.h       # Поле ввода
-│   ├── CheckBox.h      # Чекбокс
-│   ├── RadioButton.h   # Радио-кнопка
-│   ├── ProgressBar.h   # Прогресс бар
-│   ├── ListBox.h       # Список
-│   ├── Menu.h          # Меню
-│   ├── TabControl.h    # Вкладки
-│   ├── StatusBar.h     # Строка состояния
-│   ├── DropDown.h      # Выпадающий список
-│   └── MessageBox.h    # Диалоговые окна
-└── examples/
-    └── simple.cpp      # Простой пример
+└── widgets/
+    ├── Widget.h        # Базовый класс
+    ├── Window.h        # Окна
+    ├── Button.h        # Кнопки
+    ├── Label.h         # Метки
+    ├── TextBox.h       # Поле ввода
+    ├── CheckBox.h      # Чекбокс
+    ├── RadioButton.h   # Радио-кнопка
+    ├── ProgressBar.h   # Прогресс бар
+    ├── ListBox.h       # Список
+    ├── Menu.h          # Меню
+    ├── TabControl.h    # Вкладки
+    ├── StatusBar.h     # Строка состояния
+    ├── DropDown.h      # Выпадающий список
+    └── MessageBox.h    # Диалоговые окна
 ```
 
 ## Горячие клавиши

@@ -47,21 +47,21 @@ add_library(textui INTERFACE)
 target_include_directories(textui INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Примеры
-option(BUILD_EXAMPLES "Build example applications" ON)
+option(BUILD_EXAMPLES "Build example applications" OFF)
 
 if(BUILD_EXAMPLES)
-    # Простой пример
-    add_executable(textui_simple examples/simple.cpp)
-    target_link_libraries(textui_simple PRIVATE textui)
+    message(WARNING "No examples available")
 endif()
 
 # Установка
-install(TARGETS textui_simple
-    RUNTIME DESTINATION bin
+install(TARGETS textui
+    EXPORT textuiTargets
+    INCLUDES DESTINATION include
 )
 
-install(FILES ${TEXTUI_HEADERS}
+install(DIRECTORY core graphics widgets
     DESTINATION include/textui
+    FILES_MATCHING PATTERN "*.h"
 )
 
 # Вывод информации
