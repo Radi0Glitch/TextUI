@@ -281,7 +281,7 @@ public:
     }
 
     // Рисование рамки
-    void drawBox(int x, int y, int w, int h, const BoxChars& box, const TextStyle& style) {
+    void drawBox(int x, int y, int w, int h, const BoxStyle& box, const TextStyle& style) {
         if (w < 2 || h < 2) return;
 
         // Углы
@@ -304,7 +304,7 @@ public:
     }
     
     // Рисование рамки с цветом
-    void drawBox(int x, int y, int w, int h, const BoxChars& box, const ColorAttr& color) {
+    void drawBox(int x, int y, int w, int h, const BoxStyle& box, const ColorAttr& color) {
         TextStyle style(color);
         drawBox(x, y, w, h, box, style);
     }

@@ -167,7 +167,7 @@ public:
         ColorAttr color = hasFocus_ ? highlightColor_ : normalColor;
 
         // Р Р°РјРєР°
-        screen.drawBox(x_, y_, width_, height_, BoxStyles::ascii(), normalColor);
+        screen.drawBox(x_, y_, width_, height_, BoxStyles::thin(), normalColor);
 
         // Р РёСЃСѓРµРј СЌР»РµРјРµРЅС‚С‹ РјРµРЅСЋ
         for (size_t i = 0; i < items_.size(); i++) {

@@ -58,7 +58,7 @@ public:
         ColorAttr fillColor = ColorAttr(Color8::Black, Color8::BrightCyan);
 
         // Р Р°РјРєР°
-        screen.drawBox(x_, y_, width_, height_, BoxStyles::ascii(), normalColor);
+        screen.drawBox(x_, y_, width_, height_, BoxStyles::thin(), normalColor);
 
         // Р’РЅСѓС‚СЂРµРЅРЅСЏСЏ РѕР±Р»Р°СЃС‚СЊ
         int innerWidth = width_ - 2;
@@ -74,7 +74,7 @@ public:
         switch (style_) {
             case ProgressBarStyle::Solid:
                 for (int i = 0; i < fillWidth; i++) {
-                    screen.putString(innerX + i, innerY, Symbols::progressBlock, fillColor);
+                    screen.putString(innerX + i, innerY, Symbols::progressFull, fillColor);
                 }
                 break;
 

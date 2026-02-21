@@ -295,7 +295,7 @@ public:
         }
 
         // Р Р°РјРєР° РІРѕРєСЂСѓРі СЃРѕРґРµСЂР¶РёРјРѕРіРѕ
-        screen.drawBox(x_, y_ + 1, width_, height_ - 1, BoxStyles::ascii(), ColorAttr::normal());
+        screen.drawBox(x_, y_ + 1, width_, height_ - 1, BoxStyles::thin(), ColorAttr::normal());
     }
 };
 

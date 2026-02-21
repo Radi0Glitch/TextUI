@@ -22,7 +22,7 @@ private:
     bool hasCloseButton_ = false;
     ColorAttr titleColor_;
     ColorAttr borderColor_;
-    BoxChars boxStyle_;
+    BoxStyle boxStyle_;
 
 public:
     Window(int x, int y, int w, int h, const std::string& title = "")
@@ -48,7 +48,7 @@ public:
 
     void setTitleColor(ColorAttr c) { titleColor_ = c; }
     void setBorderColor(ColorAttr c) { borderColor_ = c; }
-    void setBoxStyle(const BoxChars& style) { boxStyle_ = style; }
+    void setBoxStyle(const BoxStyle& style) { boxStyle_ = style; }
 
     // Р”РѕР±Р°РІР»РµРЅРёРµ РґРѕС‡РµСЂРЅРµРіРѕ РІРёРґР¶РµС‚Р°
     template<typename T, typename... Args>

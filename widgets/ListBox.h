@@ -198,7 +198,7 @@ public:
         ColorAttr focusColor = enabled_ ? ColorAttr::highlight() : ColorAttr::biosDisabled();
 
         // Р Р°РјРєР°
-        screen.drawBox(x_, y_, width_, height_, BoxStyles::ascii(), hasFocus_ ? focusColor : normalColor);
+        screen.drawBox(x_, y_, width_, height_, BoxStyles::thin(), hasFocus_ ? focusColor : normalColor);
 
         // Р РёСЃСѓРµРј СЌР»РµРјРµРЅС‚С‹
         int visibleItems = getVisibleCount();

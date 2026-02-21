@@ -340,7 +340,7 @@ public:
         ColorAttr color = hasFocus_ ? focusColor : normalColor;
 
         // Р Р°РјРєР°
-        screen.drawBox(x_, y_, width_, height_, BoxStyles::ascii(), color);
+        screen.drawBox(x_, y_, width_, height_, BoxStyles::thin(), color);
 
         // РћС‚РѕР±СЂР°Р¶Р°РµРјС‹Р№ С‚РµРєСЃС‚
         std::string display = getDisplayText();

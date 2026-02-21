@@ -62,7 +62,7 @@ private:
     WidgetColors errorColors_;
 
     // Стили рамок
-    BoxChars boxStyle_;
+    BoxStyle boxStyle_;
 
     // Цвет фона экрана
     ColorAttr screenBackground_;
@@ -71,7 +71,7 @@ public:
     Theme(const std::string& name = "Default", ThemeType type = ThemeType::Custom)
         : name_(name)
         , type_(type)
-        , boxStyle_(BoxStyles::ascii())
+        , boxStyle_(BoxStyles::thin())
         , screenBackground_(ColorAttr(Color8::Black, Color8::Black)) {
     }
 
@@ -92,7 +92,7 @@ public:
     const WidgetColors& getDialogColors() const { return dialogColors_; }
     const WidgetColors& getErrorColors() const { return errorColors_; }
     
-    const BoxChars& getBoxStyle() const { return boxStyle_; }
+    const BoxStyle& getBoxStyle() const { return boxStyle_; }
     const ColorAttr& getScreenBackground() const { return screenBackground_; }
 
     // Сеттеры
@@ -109,7 +109,7 @@ public:
     void setDialogColors(const WidgetColors& c) { dialogColors_ = c; }
     void setErrorColors(const WidgetColors& c) { errorColors_ = c; }
     
-    void setBoxStyle(const BoxChars& style) { boxStyle_ = style; }
+    void setBoxStyle(const BoxStyle& style) { boxStyle_ = style; }
     void setScreenBackground(const ColorAttr& bg) { screenBackground_ = bg; }
 
     // Предопределённые темы

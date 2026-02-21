@@ -65,7 +65,7 @@ public:
         ColorAttr color = hasFocus_ ? focusColor : normalColor;
 
         // Р Р°РјРєР°
-        screen.drawBox(x_, y_, width_, height_, BoxStyles::ascii(), color);
+        screen.drawBox(x_, y_, width_, height_, BoxStyles::thin(), color);
 
         // РўРµРєСЃС‚ РєРЅРѕРїРєРё
         std::string btnText;

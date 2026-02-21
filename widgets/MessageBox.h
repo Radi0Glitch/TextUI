@@ -294,7 +294,7 @@ public:
             ColorAttr btnColor = isSelected ? buttonSelectedColor : buttonColor;
             
             screen.drawBox(buttonX, buttonY, static_cast<int>(btnText.length()) + 2, 3, 
-                          BoxStyles::ascii(), btnColor);
+                          BoxStyles::thin(), btnColor);
             screen.putString(buttonX + 1, buttonY + 1, btnText.c_str(), btnColor);
 
             buttonX += static_cast<int>(btnText.length()) + 4;

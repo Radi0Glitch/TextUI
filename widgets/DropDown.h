@@ -153,7 +153,7 @@ public:
         ColorAttr color = hasFocus_ ? focusColor : normalColor;
 
         // Р Р°РјРєР° РєРѕРЅС‚СЂРѕР»Р°
-        screen.drawBox(x_, y_, width_, 3, BoxStyles::ascii(), color);
+        screen.drawBox(x_, y_, width_, 3, BoxStyles::thin(), color);
 
         // РўРµРєСѓС‰РµРµ Р·РЅР°С‡РµРЅРёРµ
         std::string display;
@@ -190,7 +190,7 @@ public:
             int listY = y_ + 2;
 
             // Р Р°РјРєР° СЃРїРёСЃРєР°
-            screen.drawBox(x_, listY, width_, listHeight, BoxStyles::ascii(), color);
+            screen.drawBox(x_, listY, width_, listHeight, BoxStyles::thin(), color);
 
             // Р­Р»РµРјРµРЅС‚С‹
             for (int i = 0; i < visibleItems; i++) {
