@@ -1,95 +1,102 @@
-#ifndef CHECKBOX_H
-#define CHECKBOX_H
+﻿#ifndef TEXTUI_CHECKBOX_H
+#define TEXTUI_CHECKBOX_H
 
 #include "Widget.h"
-#include "../core/Renderer.h"
+#include "../core/Screen.h"
+#include <functional>
 
+namespace ui {
+
+/**
+ * @brief Р§РµРєР±РѕРєСЃ (С„Р»Р°Р¶РѕРє)
+ */
 class CheckBox : public Widget {
 private:
-    bool checked;
-    bool hasFocus;
+    bool checked_ = false;
+    bool hasFocus_ = false;
+    std::function<void()> onToggle_;
 
 public:
     CheckBox(int x, int y, const std::string& text, bool checked = false)
-        : Widget(x, y, static_cast<int>(text.length()) + 4, 1), checked(checked), hasFocus(false) {
-        this->text = text;
+        : Widget(x, y, static_cast<int>(text.length()) + 4, 1) {
+        text_ = text;
+        checked_ = checked;
+        canFocus_ = true;
     }
 
-    void setFocus(bool focus) { hasFocus = focus; }
-    bool isFocused() const { return hasFocus; }
-
-    void setChecked(bool value) {
-        checked = value;
-        markDirty();
+    void setOnToggle(std::function<void()> callback) {
+        onToggle_ = callback;
     }
 
-    bool isChecked() const { return checked; }
+    bool isChecked() const { return checked_; }
+
+    void setChecked(bool checked) {
+        checked_ = checked;
+    }
+
+    bool hasFocus() const { return hasFocus_; }
+
+    void setFocused(bool focus) override {
+        focused_ = focus;
+        hasFocus_ = focus;
+    }
 
     void toggle() {
-        checked = !checked;
-        markDirty();
+        if (!enabled_) return;
+        checked_ = !checked_;
+        if (onToggle_) onToggle_();
     }
 
-    void render() override {
-        if (!visible) return;
+    bool handleKey(Key key) override {
+        if (!visible_ || !enabled_ || !hasFocus_) return false;
 
-        ColorStyle style = hasFocus
-            ? ColorStyle(Color::BLACK, BackgroundColor::WHITE).setBold()
-            : colorStyle;
-
-        // Рисуем рамку [x] или [ ]
-        Renderer::drawText(x, y, checked ? "[X]" : "[ ]", style);
-        // Рисуем текст
-        Renderer::drawText(x + 4, y, text, style);
-    }
-
-    void renderToBuffer(RenderBuffer& buffer) override {
-        if (!visible || !needsRedraw) return;
-
-        ColorStyle style = hasFocus
-            ? ColorStyle(Color::BLACK, BackgroundColor::WHITE).setBold()
-            : colorStyle;
-
-        const char* checkStr = checked ? "[X]" : "[ ]";
-        for (int i = 0; i < 3 && x + i < buffer.getWidth(); i++) {
-            buffer.setStyledChar(x + i, y, checkStr[i],
-                static_cast<int>(style.foreground),
-                static_cast<int>(style.background),
-                style.bold, style.italic, style.underline);
-        }
-
-        for (size_t i = 0; i < text.length() && x + 4 + static_cast<int>(i) < buffer.getWidth(); i++) {
-            buffer.setStyledChar(x + 4 + static_cast<int>(i), y, text[i],
-                static_cast<int>(style.foreground),
-                static_cast<int>(style.background),
-                style.bold, style.italic, style.underline);
-        }
-
-        markClean();
-    }
-
-    bool handleInput(char key) override {
-        if (!visible || !hasFocus) return false;
-
-        if (key == ' ' || key == '\n' || key == '\r') {
+        if (key == Key::Space || key == Key::Enter) {
             toggle();
             return true;
         }
         return false;
     }
 
-    bool handleMouse(int mouseX, int mouseY, MouseButton /*button*/, bool isPress) override {
-        if (!visible) return false;
-
-        if (isPointInside(mouseX, mouseY)) {
-            if (isPress) {
-                hasFocus = true;
-                toggle();
-            }
+    bool handleHotkey(char key) override {
+        if (!visible_ || !enabled_) return false;
+        if (hotkey_ != '\0' && (key == hotkey_ || key == static_cast<char>(toupper(hotkey_)))) {
+            setFocus(true);
+            toggle();
             return true;
         }
         return false;
     }
+
+    void draw(Screen& screen) override {
+        if (!visible_) return;
+
+        ColorAttr normalColor = enabled_ ? ColorAttr::normal() : ColorAttr::biosDisabled();
+        ColorAttr focusColor = enabled_ ? ColorAttr::highlight() : ColorAttr::biosDisabled();
+        ColorAttr color = hasFocus_ ? focusColor : normalColor;
+
+        // Р РёСЃСѓРµРј [X] РёР»Рё [ ]
+        const char* checkStr = checked_ ? Symbols::checkboxOn : Symbols::checkboxOff;
+        
+        // Р“РѕСЂСЏС‡Р°СЏ РєР»Р°РІРёС€Р°
+        if (hotkey_ != '\0' && !hasFocus_) {
+            std::string hotkeyText = "[";
+            hotkeyText += static_cast<char>(toupper(hotkey_));
+            hotkeyText += "]";
+            screen.putString(x_, y_, hotkeyText.c_str(), TextStyle::biosHotkey());
+            screen.putString(x_ + 3, y_, checkStr, color);
+            screen.putString(x_ + 7, y_, text_.c_str(), color);
+        } else {
+            screen.putString(x_, y_, checkStr, color);
+            screen.putString(x_ + 4, y_, text_.c_str(), color);
+        }
+
+        // РРЅРґРёРєР°С‚РѕСЂ С„РѕРєСѓСЃР°
+        if (hasFocus_) {
+            screen.putString(x_ - 1, y_, Symbols::arrowRight, color);
+        }
+    }
 };
 
-#endif // CHECKBOX_H
+} // namespace ui
+
+#endif // TEXTUI_CHECKBOX_H

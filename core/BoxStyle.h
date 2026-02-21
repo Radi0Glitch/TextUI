@@ -34,27 +34,27 @@ struct BoxStyle {
     }
 
     static BoxStyle doubleLine() {
-        return BoxStyle("\xE2\x95\x90", "\xE2\x95\x91", "\xE2\x95\x94", "\xE2\x95\x97", "\xE2\x95\x9A", "\xE2\x95\x9D");
+        return BoxStyle("=", "||", "+", "+", "+", "+");
     }
 
     static BoxStyle singleLine() {
-        return BoxStyle("\xE2\x94\x80", "\xE2\x94\x82", "\xE2\x94\x8C", "\xE2\x94\x90", "\xE2\x94\x94", "\xE2\x94\x98");
+        return BoxStyle("-", "|", "+", "+", "+", "+");
     }
 
     static BoxStyle rounded() {
-        return BoxStyle("\xE2\x94\x80", "\xE2\x94\x82", "\xE2\x95\xAD", "\xE2\x95\xAE", "\xE2\x95\xB0", "\xE2\x95\xAF");
+        return BoxStyle("-", "|", "+", "+", "+", "+");
     }
 
     static BoxStyle bold() {
-        return BoxStyle("\xE2\x94\x81", "\xE2\x94\x83", "\xE2\x94\x8F", "\xE2\x94\x93", "\xE2\x94\x97", "\xE2\x94\x9B");
+        return BoxStyle("=", "||", "+", "+", "+", "+");
     }
 
     static BoxStyle dotted() {
-        return BoxStyle("\xE2\x95\x8C", "\xE2\x95\x8E", "\xE2\x94\x8C", "\xE2\x94\x90", "\xE2\x94\x94", "\xE2\x94\x98");
+        return BoxStyle("...", ":", "+", "+", "+", "+");
     }
 
     static BoxStyle dashed() {
-        return BoxStyle("\xE2\x94\x84", "\xE2\x94\x86", "\xE2\x94\x8C", "\xE2\x94\x90", "\xE2\x94\x94", "\xE2\x94\x98");
+        return BoxStyle("--", ":", "+", "+", "+", "+");
     }
 };
 

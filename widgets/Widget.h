@@ -1,106 +1,95 @@
-#ifndef WIDGET_H
-#define WIDGET_H
+﻿#ifndef TEXTUI_WIDGET_H
+#define TEXTUI_WIDGET_H
 
-#include "../core/Color.h"
-#include "../core/BoxStyle.h"
-#include "../input/Mouse.h"
-#include "../core/RenderBuffer.h"
+#include "../graphics/Colors.h"
+#include "../graphics/Chars.h"
+#include "../core/Screen.h"
+#include "../core/Input.h"  // Р’РєР»СЋС‡Р°РµРј Input.h РґР»СЏ Key
 #include <string>
+#include <functional>
+#include <memory>
 
+namespace ui {
+
+/**
+ * @brief Р‘Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ РІСЃРµС… РІРёРґР¶РµС‚РѕРІ
+ */
 class Widget {
 protected:
-    int x, y;
-    int width, height;
-    bool visible;
-    ColorStyle colorStyle;
-    BoxStyle boxStyle;
-    std::string text;
-    bool needsRedraw;
+    int x_ = 0;
+    int y_ = 0;
+    int width_ = 0;
+    int height_ = 0;
+    bool visible_ = true;
+    bool enabled_ = true;
+    bool focused_ = false;
+    bool canFocus_ = true;
+    std::string text_;
+    TextStyle style_;
+    std::string tooltip_;
+    char hotkey_ = '\0';  // Р“РѕСЂСЏС‡Р°СЏ РєР»Р°РІРёС€Р° (Alt+X)
 
 public:
-    Widget(int x, int y, int width, int height)
-        : x(x), y(y), width(width), height(height),
-          visible(true), boxStyle(BoxStyle::singleLine()), needsRedraw(true) {}
+    Widget(int x, int y, int w, int h)
+        : x_(x), y_(y), width_(w), height_(h) {}
 
     virtual ~Widget() = default;
 
-    // Геттеры и сеттеры
-    int getX() const { return x; }
-    int getY() const { return y; }
-    int getWidth() const { return width; }
-    int getHeight() const { return height; }
+    // Р“РµС‚С‚РµСЂС‹
+    int x() const { return x_; }
+    int y() const { return y_; }
+    int width() const { return width_; }
+    int height() const { return height_; }
+    bool visible() const { return visible_; }
+    bool enabled() const { return enabled_; }
+    bool focused() const { return focused_; }
+    bool canFocus() const { return canFocus_; }
+    const std::string& text() const { return text_; }
+    const std::string& tooltip() const { return tooltip_; }
+    char hotkey() const { return hotkey_; }
 
-    void setPosition(int newX, int newY) {
-        if (x != newX || y != newY) {
-            x = newX;
-            y = newY;
-            markDirty();
-        }
+    // РЎРµС‚С‚РµСЂС‹
+    void setPosition(int x, int y) { x_ = x; y_ = y; }
+    void setSize(int w, int h) { width_ = w; height_ = h; }
+    void setVisible(bool v) { visible_ = v; }
+    void setEnabled(bool v) { enabled_ = v; }
+    virtual void setFocused(bool v) { focused_ = v; }
+    void setFocus(bool v) { focused_ = v; }  // РђР»РёР°СЃ РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё
+    void setCanFocus(bool v) { canFocus_ = v; }
+    void setText(const std::string& t) { text_ = t; }
+    void setTooltip(const std::string& t) { tooltip_ = t; }
+    void setHotkey(char key) { hotkey_ = key; }
+    void setStyle(const TextStyle& s) { style_ = s; }
+
+    // РџСЂРѕРІРµСЂРєР° РїРѕРїР°РґР°РЅРёСЏ С‚РѕС‡РєРё
+    virtual bool contains(int px, int py) const {
+        return visible_ && enabled_ && 
+               px >= x_ && px < x_ + width_ && 
+               py >= y_ && py < y_ + height_;
     }
 
-    void setSize(int newWidth, int newHeight) {
-        if (width != newWidth || height != newHeight) {
-            width = newWidth;
-            height = newHeight;
-            markDirty();
-        }
+    // РћР±СЂР°Р±РѕС‚РєР° РєР»Р°РІРёР°С‚СѓСЂС‹
+    virtual bool handleKey(Key key) { 
+        (void)key; 
+        return false; 
+    }
+    
+    // РћР±СЂР°Р±РѕС‚РєР° РіРѕСЂСЏС‡РёС… РєР»Р°РІРёС€
+    virtual bool handleHotkey(char key) {
+        (void)key;
+        return false;
     }
 
-    bool isVisible() const { return visible; }
-    void setVisible(bool value) {
-        if (visible != value) {
-            visible = value;
-            markDirty();
-        }
-    }
-
-    void setColorStyle(const ColorStyle& style) {
-        colorStyle = style;
-        markDirty();
-    }
-
-    void setBoxStyle(const BoxStyle& style) {
-        boxStyle = style;
-        markDirty();
-    }
-
-    void setText(const std::string& newText) {
-        if (text != newText) {
-            text = newText;
-            markDirty();
-        }
-    }
-
-    const std::string& getText() const { return text; }
-
-    // Методы для работы с "грязными" флагами
-    void markDirty() { needsRedraw = true; }
-    void markClean() { needsRedraw = false; }
-    bool isDirty() const { return needsRedraw; }
-
-    // Виртуальные методы
-    virtual void render() = 0;
-    virtual void renderToBuffer(RenderBuffer& buffer) {
-        if (needsRedraw) {
-            render();
-            markClean();
-        }
-    }
-
-    virtual bool handleInput(char /*key*/) { return false; }
-
-    // Методы для работы с мышью
-    virtual bool handleMouse(int mouseX, int mouseY, MouseButton button, bool isPress) {
-        return isPointInside(mouseX, mouseY);
-    }
-
-    virtual bool handleMouseMove(int /*mouseX*/, int /*mouseY*/) { return false; }
-
-    // Проверка, находится ли точка внутри виджета
-    virtual bool isPointInside(int pointX, int pointY) const {
-        return pointX >= x && pointX < x + width &&
-               pointY >= y && pointY < y + height;
-    }
+    // РћС‚СЂРёСЃРѕРІРєР°
+    virtual void draw(Screen& screen) = 0;
+    
+    // РџРѕР»СѓС‡РёС‚СЊ РїСЂРµРґРїРѕС‡С‚РёС‚РµР»СЊРЅСѓСЋ РІС‹СЃРѕС‚Сѓ
+    virtual int getPreferredHeight() const { return height_; }
+    
+    // РџРѕР»СѓС‡РёС‚СЊ РїСЂРµРґРїРѕС‡С‚РёС‚РµР»СЊРЅСѓСЋ С€РёСЂРёРЅСѓ
+    virtual int getPreferredWidth() const { return width_; }
 };
 
-#endif // WIDGET_H
+} // namespace ui
+
+#endif // TEXTUI_WIDGET_H

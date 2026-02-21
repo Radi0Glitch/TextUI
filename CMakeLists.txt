@@ -1,75 +1,72 @@
 cmake_minimum_required(VERSION 3.10)
-project(TextUI VERSION 1.0.0 LANGUAGES CXX)
+
+# Проект
+project(TextUI
+    VERSION 3.0.0
+    DESCRIPTION "Cross-platform text UI framework - BIOS Style"
+    LANGUAGES CXX
+)
 
 # Стандарт C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Исходные файлы ядра
-set(CORE_SOURCES
-    core/RenderBuffer.cpp
-    core/Renderer.cpp
-    core/Terminal.cpp
-    core/SimpleAPI.cpp
-    core/WidgetManager.cpp
-)
-
-# Исходные файлы платформы
-if(WIN32 OR CMAKE_HOST_WIN32)
-    add_definitions(-DWINDOWS_PLATFORM)
-    set(PLATFORM_SOURCES
-        platform/WindowsPlatform.cpp
-    )
-else()
-    add_definitions(-DUNIX_PLATFORM)
-    set(PLATFORM_SOURCES
-        platform/UnixPlatform.cpp
-    )
+# Статическая линковка для Windows
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+elseif(MINGW)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++ -static")
 endif()
 
-# Исходные файлы окон
-set(WINDOW_SOURCES
-    window/Window.cpp
-    window/Dialog.cpp
-    window/ModalDialog.cpp
+# Исходники фреймворка (заголовочные файлы)
+set(TEXTUI_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/Screen.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/Input.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/App.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/Colors.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/Chars.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/Theme.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/Widget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/Window.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/Button.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/Label.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/TextBox.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/CheckBox.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/RadioButton.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/ProgressBar.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/ListBox.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/Menu.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/TabControl.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/StatusBar.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/DropDown.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/widgets/MessageBox.h
 )
 
-# Исходные файлы ввода
-set(INPUT_SOURCES
-    input/Mouse.cpp
-)
+# Создаем интерфейс библиотеки (только заголовки)
+add_library(textui INTERFACE)
+target_include_directories(textui INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Все исходные файлы библиотеки
-set(TEXTUI_SOURCES
-    ${CORE_SOURCES}
-    ${PLATFORM_SOURCES}
-    ${WINDOW_SOURCES}
-    ${INPUT_SOURCES}
-)
+# Примеры
+option(BUILD_EXAMPLES "Build example applications" ON)
 
-# Создаем статическую библиотеку
-add_library(textui STATIC ${TEXTUI_SOURCES})
-
-# Добавляем пути для заголовочных файлов
-target_include_directories(textui PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/core
-    ${CMAKE_CURRENT_SOURCE_DIR}/platform
-    ${CMAKE_CURRENT_SOURCE_DIR}/input
-    ${CMAKE_CURRENT_SOURCE_DIR}/widgets
-    ${CMAKE_CURRENT_SOURCE_DIR}/window
-)
-
-# Пример использования
-add_executable(textui_example examples/main.cpp)
-target_link_libraries(textui_example PRIVATE textui)
+if(BUILD_EXAMPLES)
+    # Простой пример
+    add_executable(textui_simple examples/simple.cpp)
+    target_link_libraries(textui_simple PRIVATE textui)
+endif()
 
 # Установка
-install(TARGETS textui
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
+install(TARGETS textui_simple
+    RUNTIME DESTINATION bin
 )
 
-install(DIRECTORY core widgets window input platform
-    DESTINATION include
-    FILES_MATCHING PATTERN "*.h"
+install(FILES ${TEXTUI_HEADERS}
+    DESTINATION include/textui
 )
+
+# Вывод информации
+message(STATUS "")
+message(STATUS "TextUI Framework v${PROJECT_VERSION}")
+message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  Examples: ${BUILD_EXAMPLES}")
+message(STATUS "")

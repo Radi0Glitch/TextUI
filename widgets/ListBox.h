@@ -1,199 +1,269 @@
-#ifndef LISTBOX_H
-#define LISTBOX_H
+﻿#ifndef TEXTUI_LISTBOX_H
+#define TEXTUI_LISTBOX_H
 
 #include "Widget.h"
-#include "../core/Renderer.h"
+#include "../core/Screen.h"
 #include <vector>
+#include <functional>
 
+namespace ui {
+
+/**
+ * @brief РЎРїРёСЃРѕРє СЃ РїСЂРѕРєСЂСѓС‚РєРѕР№
+ */
 class ListBox : public Widget {
 private:
-    std::vector<std::string> items;
-    int selectedIndex;
-    int scrollOffset;
-    bool hasFocus;
+    std::vector<std::string> items_;
+    std::vector<void*> itemData_;  // Р”Р°РЅРЅС‹Рµ РґР»СЏ РєР°Р¶РґРѕРіРѕ СЌР»РµРјРµРЅС‚Р°
+    int selectedIndex_ = -1;
+    int scrollOffset_ = 0;
+    bool hasFocus_ = false;
+    std::function<void(int)> onSelect_;
+    std::function<void(int)> onDoubleClick_;
+    bool showScrollBars_ = true;
+    int lastClickTime_ = 0;
 
 public:
     ListBox(int x, int y, int width, int height)
-        : Widget(x, y, width, height), selectedIndex(-1), scrollOffset(0), hasFocus(false) {}
-
-    void setFocus(bool focus) { hasFocus = focus; }
-    bool isFocused() const { return hasFocus; }
-
-    void addItem(const std::string& item) {
-        items.push_back(item);
-        markDirty();
+        : Widget(x, y, width, height) {
+        canFocus_ = true;
     }
 
-    void removeItem(size_t index) {
-        if (index < items.size()) {
-            items.erase(items.begin() + static_cast<int>(index));
-            if (selectedIndex >= static_cast<int>(items.size())) {
-                selectedIndex = static_cast<int>(items.size()) - 1;
+    void setShowScrollBars(bool show) { showScrollBars_ = show; }
+
+    // Р”РѕР±Р°РІР»РµРЅРёРµ СЌР»РµРјРµРЅС‚Р°
+    void addItem(const std::string& item, void* data = nullptr) {
+        items_.push_back(item);
+        itemData_.push_back(data);
+        if (selectedIndex_ < 0) selectedIndex_ = 0;
+    }
+
+    void insertItem(int index, const std::string& item, void* data = nullptr) {
+        if (index < 0 || index > static_cast<int>(items_.size())) return;
+        items_.insert(items_.begin() + index, item);
+        itemData_.insert(itemData_.begin() + index, data);
+        if (selectedIndex_ >= index) selectedIndex_++;
+    }
+
+    void removeItem(int index) {
+        if (index < 0 || index >= static_cast<int>(items_.size())) return;
+        items_.erase(items_.begin() + index);
+        itemData_.erase(itemData_.begin() + index);
+        if (selectedIndex_ >= index) selectedIndex_--;
+        if (selectedIndex_ < 0 && !items_.empty()) selectedIndex_ = 0;
+    }
+
+    void removeItem(const std::string& item) {
+        for (size_t i = 0; i < items_.size(); i++) {
+            if (items_[i] == item) {
+                removeItem(static_cast<int>(i));
+                return;
             }
-            markDirty();
         }
     }
 
-    void clear() {
-        items.clear();
-        selectedIndex = -1;
-        scrollOffset = 0;
-        markDirty();
+    void clearItems() {
+        items_.clear();
+        itemData_.clear();
+        selectedIndex_ = -1;
+        scrollOffset_ = 0;
     }
 
-    int getSelectedIndex() const { return selectedIndex; }
-    const std::string& getSelectedItem() const { return items[selectedIndex]; }
+    int getCount() const { return static_cast<int>(items_.size()); }
+
+    int getSelectedIndex() const { return selectedIndex_; }
 
     void setSelectedIndex(int index) {
-        if (index >= 0 && index < static_cast<int>(items.size())) {
-            selectedIndex = index;
-            // Прокрутка к выбранному элементу
-            if (selectedIndex < scrollOffset) {
-                scrollOffset = selectedIndex;
-            } else if (selectedIndex >= scrollOffset + height - 2) {
-                scrollOffset = selectedIndex - (height - 2) + 1;
+        if (index >= 0 && index < static_cast<int>(items_.size())) {
+            selectedIndex_ = index;
+            // РџСЂРѕРєСЂСѓС‚РєР° Рє РІС‹Р±СЂР°РЅРЅРѕРјСѓ СЌР»РµРјРµРЅС‚Сѓ
+            if (selectedIndex_ < scrollOffset_) {
+                scrollOffset_ = selectedIndex_;
+            } else if (selectedIndex_ >= scrollOffset_ + getVisibleCount()) {
+                scrollOffset_ = selectedIndex_ - getVisibleCount() + 1;
             }
-            markDirty();
         }
     }
 
-    void render() override {
-        if (!visible) return;
-
-        ColorStyle style = hasFocus
-            ? ColorStyle(Color::BLACK, BackgroundColor::WHITE).setBold()
-            : colorStyle;
-
-        Renderer::drawRectangle(x, y, width, height, boxStyle, style);
-
-        int visibleItems = height - 2;
-        for (int i = 0; i < visibleItems && scrollOffset + i < static_cast<int>(items.size()); i++) {
-            int itemIndex = scrollOffset + i;
-            std::string display = items[itemIndex];
-            if (static_cast<int>(display.length()) > width - 4) {
-                display = display.substr(0, width - 5) + "...";
-            }
-
-            if (itemIndex == selectedIndex) {
-                display = ">" + display + "<";
-            } else {
-                display = " " + display + " ";
-            }
-
-            Renderer::drawText(x + 1, y + 1 + i, display, style);
+    const std::string& getSelectedItem() const {
+        static std::string empty;
+        if (selectedIndex_ >= 0 && selectedIndex_ < static_cast<int>(items_.size())) {
+            return items_[selectedIndex_];
         }
+        return empty;
     }
 
-    void renderToBuffer(RenderBuffer& buffer) override {
-        if (!visible || !needsRedraw) return;
-
-        ColorStyle style = hasFocus
-            ? ColorStyle(Color::BLACK, BackgroundColor::WHITE).setBold()
-            : colorStyle;
-
-        // Рисуем рамку
-        for (int i = x + 1; i < x + width - 1; i++) {
-            buffer.setStyledChar(i, y, boxStyle.horizontal[0],
-                static_cast<int>(style.foreground),
-                static_cast<int>(style.background),
-                style.bold, style.italic, style.underline);
-            buffer.setStyledChar(i, y + height - 1, boxStyle.horizontal[0],
-                static_cast<int>(style.foreground),
-                static_cast<int>(style.background),
-                style.bold, style.italic, style.underline);
+    void* getSelectedItemData() const {
+        if (selectedIndex_ >= 0 && selectedIndex_ < static_cast<int>(itemData_.size())) {
+            return itemData_[selectedIndex_];
         }
-        for (int i = y + 1; i < y + height - 1; i++) {
-            buffer.setStyledChar(x, i, boxStyle.vertical[0],
-                static_cast<int>(style.foreground),
-                static_cast<int>(style.background),
-                style.bold, style.italic, style.underline);
-            buffer.setStyledChar(x + width - 1, i, boxStyle.vertical[0],
-                static_cast<int>(style.foreground),
-                static_cast<int>(style.background),
-                style.bold, style.italic, style.underline);
-        }
-        // Углы
-        buffer.setStyledChar(x, y, boxStyle.top_left[0],
-            static_cast<int>(style.foreground),
-            static_cast<int>(style.background),
-            style.bold, style.italic, style.underline);
-        buffer.setStyledChar(x + width - 1, y, boxStyle.top_right[0],
-            static_cast<int>(style.foreground),
-            static_cast<int>(style.background),
-            style.bold, style.italic, style.underline);
-        buffer.setStyledChar(x, y + height - 1, boxStyle.bottom_left[0],
-            static_cast<int>(style.foreground),
-            static_cast<int>(style.background),
-            style.bold, style.italic, style.underline);
-        buffer.setStyledChar(x + width - 1, y + height - 1, boxStyle.bottom_right[0],
-            static_cast<int>(style.foreground),
-            static_cast<int>(style.background),
-            style.bold, style.italic, style.underline);
-
-        // Рисуем элементы
-        int visibleItems = height - 2;
-        for (int i = 0; i < visibleItems && scrollOffset + i < static_cast<int>(items.size()); i++) {
-            int itemIndex = scrollOffset + i;
-            std::string display = items[itemIndex];
-            if (static_cast<int>(display.length()) > width - 4) {
-                display = display.substr(0, width - 5) + "...";
-            }
-
-            if (itemIndex == selectedIndex) {
-                display = ">" + display + "<";
-            } else {
-                display = " " + display + " ";
-            }
-
-            for (size_t j = 0; j < display.length() && x + 1 + static_cast<int>(j) < x + width - 1; j++) {
-                buffer.setStyledChar(x + 1 + static_cast<int>(j), y + 1 + i, display[j],
-                    static_cast<int>(style.foreground),
-                    static_cast<int>(style.background),
-                    style.bold, style.italic, style.underline);
-            }
-        }
-
-        markClean();
+        return nullptr;
     }
 
-    bool handleInput(char key) override {
-        if (!visible || !hasFocus || items.empty()) return false;
+    const std::string& getItem(int index) const {
+        static std::string empty;
+        if (index >= 0 && index < static_cast<int>(items_.size())) {
+            return items_[index];
+        }
+        return empty;
+    }
+
+    void setOnSelect(std::function<void(int)> callback) {
+        onSelect_ = callback;
+    }
+
+    void setOnDoubleClick(std::function<void(int)> callback) {
+        onDoubleClick_ = callback;
+    }
+
+    bool hasFocus() const { return hasFocus_; }
+
+    void setFocused(bool focus) override {
+        focused_ = focus;
+        hasFocus_ = focus;
+    }
+
+    int getVisibleCount() const {
+        return height_ - 2;  // РЈС‡РёС‚С‹РІР°РµРј СЂР°РјРєРё
+    }
+
+    bool handleKey(Key key) override {
+        if (!visible_ || !enabled_ || !hasFocus_ || items_.empty()) return false;
 
         switch (key) {
-            case '\x1B': // Up arrow (simplified)
-                if (selectedIndex > 0) {
-                    setSelectedIndex(selectedIndex - 1);
+            case Key::Up:
+                if (selectedIndex_ > 0) {
+                    selectedIndex_--;
+                    if (selectedIndex_ < scrollOffset_) {
+                        scrollOffset_ = selectedIndex_;
+                    }
+                    if (onSelect_) onSelect_(selectedIndex_);
                 }
                 return true;
-            case '\x02': // Down arrow (simplified)
-                if (selectedIndex < static_cast<int>(items.size()) - 1) {
-                    setSelectedIndex(selectedIndex + 1);
+
+            case Key::Down:
+                if (selectedIndex_ < static_cast<int>(items_.size()) - 1) {
+                    selectedIndex_++;
+                    if (selectedIndex_ >= scrollOffset_ + getVisibleCount()) {
+                        scrollOffset_ = selectedIndex_ - getVisibleCount() + 1;
+                    }
+                    if (onSelect_) onSelect_(selectedIndex_);
                 }
                 return true;
-            case ' ':
-            case '\n':
-            case '\r':
-                // Выбор элемента
+
+            case Key::PageUp:
+                selectedIndex_ -= getVisibleCount();
+                if (selectedIndex_ < 0) selectedIndex_ = 0;
+                scrollOffset_ = selectedIndex_;
+                if (onSelect_) onSelect_(selectedIndex_);
                 return true;
+
+            case Key::PageDown:
+                selectedIndex_ += getVisibleCount();
+                if (selectedIndex_ >= static_cast<int>(items_.size())) {
+                    selectedIndex_ = static_cast<int>(items_.size()) - 1;
+                }
+                scrollOffset_ = selectedIndex_ - getVisibleCount() + 1;
+                if (scrollOffset_ < 0) scrollOffset_ = 0;
+                if (onSelect_) onSelect_(selectedIndex_);
+                return true;
+
+            case Key::Home:
+                selectedIndex_ = 0;
+                scrollOffset_ = 0;
+                if (onSelect_) onSelect_(selectedIndex_);
+                return true;
+
+            case Key::End:
+                selectedIndex_ = static_cast<int>(items_.size()) - 1;
+                scrollOffset_ = selectedIndex_ - getVisibleCount() + 1;
+                if (scrollOffset_ < 0) scrollOffset_ = 0;
+                if (onSelect_) onSelect_(selectedIndex_);
+                return true;
+
+            case Key::Enter:
+            case Key::Space:
+                if (onSelect_) onSelect_(selectedIndex_);
+                return true;
+
+            default:
+                return false;
         }
-        return false;
     }
 
-    bool handleMouse(int mouseX, int mouseY, MouseButton /*button*/, bool isPress) override {
-        if (!visible) return false;
+    void draw(Screen& screen) override {
+        if (!visible_) return;
 
-        if (isPointInside(mouseX, mouseY)) {
-            if (isPress) {
-                hasFocus = true;
-                int itemIndex = mouseY - y - 1 + scrollOffset;
-                if (itemIndex >= 0 && itemIndex < static_cast<int>(items.size())) {
-                    setSelectedIndex(itemIndex);
-                }
+        ColorAttr normalColor = enabled_ ? ColorAttr::normal() : ColorAttr::biosDisabled();
+        ColorAttr focusColor = enabled_ ? ColorAttr::highlight() : ColorAttr::biosDisabled();
+
+        // Р Р°РјРєР°
+        screen.drawBox(x_, y_, width_, height_, BoxStyles::ascii(), hasFocus_ ? focusColor : normalColor);
+
+        // Р РёСЃСѓРµРј СЌР»РµРјРµРЅС‚С‹
+        int visibleItems = getVisibleCount();
+        for (int i = 0; i < visibleItems && scrollOffset_ + i < static_cast<int>(items_.size()); i++) {
+            int itemIndex = scrollOffset_ + i;
+            std::string display = items_[itemIndex];
+            bool isSelected = (itemIndex == selectedIndex_);
+
+            // РћР±СЂРµР·Р°РµРј, РµСЃР»Рё РЅРµ РїРѕРјРµС‰Р°РµС‚СЃСЏ
+            int maxLen = width_ - 4;  // РЈС‡РёС‚С‹РІР°РµРј СЂР°РјРєСѓ Рё РјР°СЂРєРµСЂ
+            if (static_cast<int>(display.length()) > maxLen) {
+                display = display.substr(0, maxLen - 1) + Symbols::arrowRight;
             }
-            return true;
+
+            // Р¤РѕСЂРјРёСЂСѓРµРј СЃС‚СЂРѕРєСѓ
+            std::string line;
+            if (isSelected && hasFocus_) {
+                line = Symbols::arrowRight + display;
+            } else {
+                line = " " + display;
+            }
+
+            // Р¦РІРµС‚
+            ColorAttr color = (isSelected && hasFocus_) ? focusColor : normalColor;
+            
+            screen.putString(x_ + 1, y_ + 1 + i, line.c_str(), color);
         }
-        return false;
+
+        // РЎРєСЂРѕР»Р»Р±Р°СЂ (РµСЃР»Рё РІРєР»СЋС‡РµРЅ)
+        if (showScrollBars_ && static_cast<int>(items_.size()) > visibleItems) {
+            drawScrollBar(screen);
+        }
+
+        // РРЅРґРёРєР°С‚РѕСЂ С„РѕРєСѓСЃР°
+        if (hasFocus_) {
+            screen.putString(x_ - 1, y_, "#", TextStyle::biosMenu());
+        }
+    }
+
+private:
+    void drawScrollBar(Screen& screen) {
+        int visibleItems = getVisibleCount();
+        int totalItems = static_cast<int>(items_.size());
+        
+        // РџРѕР·РёС†РёСЏ Рё СЂР°Р·РјРµСЂ РїРѕР»Р·СѓРЅРєР°
+        int thumbSize = std::max(1, (visibleItems * visibleItems) / totalItems);
+        int thumbPos = (scrollOffset_ * (visibleItems - thumbSize)) / 
+                       std::max(1, (totalItems - visibleItems));
+        
+        // Р РёСЃСѓРµРј РїРѕР»РѕСЃСѓ РїСЂРѕРєСЂСѓС‚РєРё
+        int scrollX = x_ + width_ - 2;
+        for (int i = 0; i < visibleItems; i++) {
+            if (i == 0) {
+                screen.putString(scrollX, y_ + 1 + i, Symbols::arrowUp, ColorAttr::normal());
+            } else if (i == visibleItems - 1) {
+                screen.putString(scrollX, y_ + 1 + i, Symbols::arrowDown, ColorAttr::normal());
+            } else if (i >= thumbPos && i < thumbPos + thumbSize) {
+                screen.putString(scrollX, y_ + 1 + i, Symbols::scrollThumb, ColorAttr::highlight());
+            } else {
+                screen.putString(scrollX, y_ + 1 + i, Symbols::separatorV, ColorAttr::normal());
+            }
+        }
     }
 };
 
-#endif // LISTBOX_H
+} // namespace ui
+
+#endif // TEXTUI_LISTBOX_H

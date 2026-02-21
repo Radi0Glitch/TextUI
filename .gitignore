@@ -1,40 +1,43 @@
-# Visual Studio
-.vs/
-*.suo
-*.user
-*.vcxproj.user
-*.vcxproj.filters
-
-# VS Code
-.vscode/
-
-# CMake
+# Build directory
 build/
 cmake-build-*/
-CMakeCache.txt
-CMakeFiles/
-Makefile
-compile_commands.json
+out/
 
-# Компиляция
+# Compiled files
 *.o
 *.obj
 *.exe
 *.dll
 *.so
 *.dylib
-*.lib
 *.a
+*.lib
 
-# Временные файлы
+# Temporary files
 *.tmp
 *.swp
 *.bak
 *~
 
-# Логи
-*.log
+# IDE files
+.vscode/
+.vs/
+*.suo
+*.user
+*.ncb
+*.sdf
+ipch/
 
-# Тесты
-test/
-tests/
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Testing
+Testing/
+
+# Package files
+*.tar.gz
+*.zip

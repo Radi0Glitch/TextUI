@@ -1,177 +1,111 @@
-#ifndef BUTTON_H
-#define BUTTON_H
+﻿#ifndef TEXTUI_BUTTON_H
+#define TEXTUI_BUTTON_H
 
 #include "Widget.h"
-#include "../core/Renderer.h"
+#include "../core/Screen.h"
 #include <functional>
 
+namespace ui {
+
+/**
+ * @brief РљРЅРѕРїРєР° СЃ РїРѕРґРґРµСЂР¶РєРѕР№ РіРѕСЂСЏС‡РёС… РєР»Р°РІРёС€
+ */
 class Button : public Widget {
 private:
-    std::function<void()> onClick;
-    bool isPressed;
-    bool hasFocus;
-    bool isHovered;
+    std::function<void()> onClick_;
+    bool hasFocus_ = false;
+    int minWidth_ = 0;
 
 public:
-    Button(int x, int y, int width, const std::string& text)
-        : Widget(x, y, width, 3), onClick(nullptr), isPressed(false), hasFocus(false), isHovered(false) {
-        this->text = text;
-        if (static_cast<int>(text.length()) > width - 2) {
-            this->width = static_cast<int>(text.length()) + 2;
-        }
+    Button(int x, int y, int width, const std::string& text, std::function<void()> onClick = nullptr)
+        : Widget(x, y, width, 3) {
+        text_ = text;
+        onClick_ = onClick;
+        canFocus_ = true;
     }
 
-    void setOnClick(const std::function<void()>& callback) {
-        onClick = callback;
+    void setOnClick(std::function<void()> callback) {
+        onClick_ = callback;
     }
 
-    void setFocus(bool focus) { hasFocus = focus; }
-    bool isFocused() const { return hasFocus; }
+    void setMinWidth(int w) { minWidth_ = w; }
 
-    void render() override {
-        if (!visible) return;
+    bool hasFocus() const { return hasFocus_; }
 
-        ColorStyle buttonStyle = colorStyle;
-        if (hasFocus || isHovered) {
-            buttonStyle = ColorStyle(Color::BLACK, BackgroundColor::WHITE).setBold();
-        } else if (isPressed) {
-            buttonStyle = ColorStyle(Color::WHITE, BackgroundColor::BLUE);
-        }
-
-        // Рисуем рамку кнопки
-        Renderer::drawRectangle(x, y, width, height, boxStyle, buttonStyle);
-
-        // Рисуем текст по центру
-        int textX = x + (width - static_cast<int>(text.length())) / 2;
-        int textY = y + height / 2;
-        Renderer::drawText(textX, textY, text, buttonStyle);
+    void setFocused(bool focus) override {
+        focused_ = focus;
+        hasFocus_ = focus;
     }
 
-    void renderToBuffer(RenderBuffer& buffer) override {
-        if (!visible || !needsRedraw) return;
-
-        ColorStyle buttonStyle = colorStyle;
-        if (hasFocus || isHovered) {
-            buttonStyle = ColorStyle(Color::BLACK, BackgroundColor::WHITE).setBold();
-        } else if (isPressed) {
-            buttonStyle = ColorStyle(Color::WHITE, BackgroundColor::BLUE);
-        }
-
-        // Рисуем рамку кнопки в буфер
-        // Верхняя и нижняя линии
-        for (int i = x + 1; i < x + width - 1; i++) {
-            buffer.setStyledChar(i, y, boxStyle.horizontal[0],
-                static_cast<int>(buttonStyle.foreground),
-                static_cast<int>(buttonStyle.background),
-                buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-            buffer.setStyledChar(i, y + height - 1, boxStyle.horizontal[0],
-                static_cast<int>(buttonStyle.foreground),
-                static_cast<int>(buttonStyle.background),
-                buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        }
-
-        // Левые и правые линии
-        for (int i = y + 1; i < y + height - 1; i++) {
-            buffer.setStyledChar(x, i, boxStyle.vertical[0],
-                static_cast<int>(buttonStyle.foreground),
-                static_cast<int>(buttonStyle.background),
-                buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-            buffer.setStyledChar(x + width - 1, i, boxStyle.vertical[0],
-                static_cast<int>(buttonStyle.foreground),
-                static_cast<int>(buttonStyle.background),
-                buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        }
-
-        // Углы
-        buffer.setStyledChar(x, y, boxStyle.top_left[0],
-            static_cast<int>(buttonStyle.foreground),
-            static_cast<int>(buttonStyle.background),
-            buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        buffer.setStyledChar(x + width - 1, y, boxStyle.top_right[0],
-            static_cast<int>(buttonStyle.foreground),
-            static_cast<int>(buttonStyle.background),
-            buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        buffer.setStyledChar(x, y + height - 1, boxStyle.bottom_left[0],
-            static_cast<int>(buttonStyle.foreground),
-            static_cast<int>(buttonStyle.background),
-            buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        buffer.setStyledChar(x + width - 1, y + height - 1, boxStyle.bottom_right[0],
-            static_cast<int>(buttonStyle.foreground),
-            static_cast<int>(buttonStyle.background),
-            buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-
-        // Рисуем текст по центру
-        int textX = x + (width - static_cast<int>(text.length())) / 2;
-        int textY = y + height / 2;
-        for (size_t i = 0; i < text.length() && textX + static_cast<int>(i) < buffer.getWidth(); i++) {
-            buffer.setStyledChar(textX + static_cast<int>(i), textY, text[i],
-                static_cast<int>(buttonStyle.foreground),
-                static_cast<int>(buttonStyle.background),
-                buttonStyle.bold, buttonStyle.italic, buttonStyle.underline);
-        }
-
-        markClean();
-    }
-
-    bool handleInput(char key) override {
-        if (!visible || !hasFocus) return false;
-
-        switch (key) {
-            case ' ':
-            case '\n':
-            case '\r':
-                triggerClick();
-                return true;
+    bool handleKey(Key key) override {
+        if (!visible_ || !enabled_ || !hasFocus_) return false;
+        
+        if (key == Key::Enter || key == Key::Space) {
+            if (onClick_) onClick_();
+            return true;
         }
         return false;
     }
 
-    bool handleMouse(int mouseX, int mouseY, MouseButton button, bool isPress) override {
-        if (!visible) return false;
+    bool handleHotkey(char key) override {
+        if (!visible_ || !enabled_) return false;
+        if (hotkey_ != '\0' && (key == hotkey_ || key == static_cast<char>(toupper(hotkey_)))) {
+            setFocus(true);
+            if (onClick_) onClick_();
+            return true;
+        }
+        return false;
+    }
 
-        if (isPointInside(mouseX, mouseY)) {
-            if (button == MouseButton::LEFT) {
-                if (isPress) {
-                    isPressed = true;
-                    isHovered = true;
-                } else {
-                    if (isPressed) {
-                        triggerClick();
-                    }
-                    isPressed = false;
-                }
-                return true;
+    void draw(Screen& screen) override {
+        if (!visible_) return;
+
+        ColorAttr normalColor = enabled_ ? ColorAttr::normal() : ColorAttr::biosDisabled();
+        ColorAttr focusColor = enabled_ ? ColorAttr::highlight() : ColorAttr::biosDisabled();
+        ColorAttr color = hasFocus_ ? focusColor : normalColor;
+
+        // Р Р°РјРєР°
+        screen.drawBox(x_, y_, width_, height_, BoxStyles::ascii(), color);
+
+        // РўРµРєСЃС‚ РєРЅРѕРїРєРё
+        std::string btnText;
+        
+        // Р“РѕСЂСЏС‡Р°СЏ РєР»Р°РІРёС€Р°
+        if (hotkey_ != '\0') {
+            // Р¤РѕСЂРјР°С‚: [X]Text РёР»Рё [X] Text
+            std::string displayText = text_;
+            size_t hotkeyPos = displayText.find(hotkey_);
+            if (hotkeyPos == std::string::npos) {
+                hotkeyPos = displayText.find(static_cast<char>(toupper(hotkey_)));
             }
-            return true;
+            
+            if (hotkeyPos != std::string::npos && !hasFocus_) {
+                // РџРѕРєР°Р·С‹РІР°РµРј РіРѕСЂСЏС‡СѓСЋ РєР»Р°РІРёС€Сѓ РѕС‚РґРµР»СЊРЅРѕ
+                screen.putString(x_ + 1, y_, "[", TextStyle::biosHotkey());
+                screen.putString(x_ + 2, y_, std::string(1, static_cast<char>(toupper(hotkey_))).c_str(), TextStyle::biosHotkey());
+                screen.putString(x_ + 3, y_, "]", TextStyle::biosHotkey());
+                btnText = " " + text_ + " ";
+            } else {
+                btnText = " " + text_ + " ";
+            }
         } else {
-            isPressed = false;
-            isHovered = false;
+            btnText = " " + text_ + " ";
         }
 
-        return false;
-    }
+        // Р¦РµРЅС‚СЂРёСЂРѕРІР°РЅРёРµ С‚РµРєСЃС‚Р°
+        int textWidth = static_cast<int>(btnText.length());
+        int textX = x_ + (width_ - textWidth) / 2;
+        if (textX < x_ + 1) textX = x_ + 1;
+        
+        screen.putString(textX, y_ + 1, btnText.c_str(), color);
 
-    bool handleMouseMove(int mouseX, int mouseY) override {
-        if (!visible) return false;
-
-        if (isPointInside(mouseX, mouseY)) {
-            isHovered = true;
-            return true;
-        } else {
-            isHovered = false;
-            isPressed = false;
-        }
-
-        return false;
-    }
-
-private:
-    void triggerClick() {
-        isPressed = false;
-        if (onClick) {
-            onClick();
+        // РРЅРґРёРєР°С‚РѕСЂ С„РѕРєСѓСЃР°
+        if (hasFocus_) {
+            screen.putString(x_ + 1, y_ + 1, Symbols::cursorBlock, color);
         }
     }
 };
 
-#endif // BUTTON_H
+} // namespace ui
+
+#endif // TEXTUI_BUTTON_H
